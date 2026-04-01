@@ -6,8 +6,8 @@ import numpy as np
 # Load model and preprocessor
 @st.cache_resource
 def load_model():
-    model = joblib.load('rf_model.pkl')
-    preprocessor = joblib.load('preprocessor.pkl')
+    model = joblib.load('model/rf_model.pkl')
+    preprocessor = joblib.load('model/preprocessor.pkl')
     return model, preprocessor
 
 model, preprocessor = load_model()
