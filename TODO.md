@@ -1,11 +1,14 @@
-# ChurnAi - Professional Streamlit Dashboard Upgrade Tracker
+# Model Cleanup & Testing - Progress Update
 
-## Approved Plan Steps
-- [x] **Step 1:** Stop current Streamlit terminal (Ctrl+C).
-- [x] **Step 2:** Create backup of original src/app.py (src/app_original.py).
-- [x] **Step 3:** Implement professional CSS and interactive features in src/app.py (glassmorphism, Plotly gauge/chart, live sliders, animations).
-- [ ] **Step 4:** Rerun `.\venv\Scripts\python.exe -m streamlit run src/app.py`.
-- [ ] **Step 5:** Verify enhanced dashboard at http://localhost:8501.
+## Status
+✅ **Step 1:** src/config.py created
+✅ **Step 2:** src/model.py created (tuned RF+CV+logging)
+✅ **Step 3:** src/test_model.py created
 
-**Progress: UI upgraded! Installed plotly/kaleido. Streamlit will hot-reload. Refresh browser at http://localhost:8501**
+## Next Steps
+- [ ] **Step 4:** Wait for `python src/model.py` to complete & review logs/metrics
+- [ ] **Step 5:** Run `python src/test_model.py`
+- [ ] **Step 6:** Fix any issues
+- [ ] **Step 7:** Update app.py + docs + commit/push
 
+**Model training running...**
