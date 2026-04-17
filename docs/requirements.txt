@@ -5,4 +5,8 @@ pandas
 numpy
 matplotlib
 seaborn
+pdfplumber==0.11.4
+reportlab==4.0.9
+plotly==5.24.1
+streamlit==1.38.0
 

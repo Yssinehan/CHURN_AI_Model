@@ -77,16 +77,9 @@ Métriques cibles :
 - Temps prédiction : <1s
 ```
 
-## 6. Roadmap Évolutions
-```
-Phase 2 ⏳ :
-- [ ] Multi-modèles comparaison
-- [ ] Batch prediction (fichier CSV)
-- [ ] Déploiement cloud (Streamlit Cloud)
-- [ ] Monitoring performances (drift)
-```
 
-**Statut projet : ✅ EN PROD (localhost:8501)**
 
-**Date : Avril 2026** | **Version : 1.0**
+**Statut projet : ✅ Complet et prêt pour déploiement**
+
+**Date : Avril 2026** | **Version : 2.0 - Professionnalisée**
 

@@ -9,7 +9,7 @@ import pytest  # or unittest
 
 from config import (
     MODEL_PATH, PREPROCESSOR_PATH, METRICS_PATH, MIN_ACCURACY, MIN_AUC, MIN_F1_CHURN,
-    DATA_RAW_PATH, NUMERICAL_FEATURES, CATEGORICAL_FEATURES, TARGET
+    DATA_RAW_PATH, DATA_PROCESSED_DIR, NUMERICAL_FEATURES, CATEGORICAL_FEATURES, TARGET
 )
 from model import load_data, preprocess_data, train_evaluate_model
 

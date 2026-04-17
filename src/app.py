@@ -5,11 +5,16 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
+import pdfplumber
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import config as cfg
+from report_generator import generate_pdf_report
 
 # Page config
 st.set_page_config(
-    page_title="Churn Prediction Pro",
-    page_icon="🚀",
+    page_title="Churn Risk Assessment",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -20,7 +25,7 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
     .main {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
         min-height: 100vh;
         padding: 2rem;
     }
@@ -31,70 +36,66 @@ st.markdown("""
     
     h1, h2, h3 {
         font-family: 'Inter', sans-serif;
-        color: white;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        color: #ffffff;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
     }
     
-    .glass-card {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(20px);
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+    .card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
         padding: 2rem;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         margin: 1rem 0;
-        transition: all 0.3s ease;
     }
     
-    .glass-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+    .card:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
     }
     
-    .metric-container {
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 15px;
-        padding: 1rem;
+    .metric-card {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 1.5rem;
         text-align: center;
+        border-left: 4px solid #3b82f6;
         font-family: 'Inter', sans-serif;
     }
     
     .btn-primary {
-        background: linear-gradient(45deg, #ff6b6b, #feca57);
+        background: #3b82f6;
+        color: white;
         border: none;
-        border-radius: 50px;
-        padding: 12px 30px;
-        font-weight: 600;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 500;
         font-size: 16px;
-        transition: all 0.3s ease;
-        box-shadow: 0 10px 20px rgba(254, 202, 87, 0.3);
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     }
     
     .btn-primary:hover {
-        transform: scale(1.05);
-        box-shadow: 0 15px 30px rgba(254, 202, 87, 0.4);
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     }
     
-    .risk-low { background: linear-gradient(45deg, #4ecdc4, #44a08d); }
-    .risk-medium { background: linear-gradient(45deg, #f7dc6f, #f1c40f); }
-    .risk-high { background: linear-gradient(45deg, #ff6b6b, #ee5a52); }
+    .risk-low { border-left-color: #10b981; }
+    .risk-medium { border-left-color: #f59e0b; }
+    .risk-high { border-left-color: #ef4444; }
     
     .slider-container {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 15px;
+        background: #f1f5f9;
+        border-radius: 8px;
         padding: 1rem;
         margin: 0.5rem 0;
     }
     
-    /* Animate metrics */
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-    }
-    
-    .animated-metric {
-        animation: pulse 2s infinite;
+    .section-header {
+        color: #1e3a8a;
+        font-weight: 600;
+        margin-bottom: 1rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -113,42 +114,73 @@ if 'input_data' not in st.session_state:
     st.session_state.input_data = np.zeros((1, 13))
 
 # Sidebar inputs
-st.sidebar.markdown('<div class="glass-card"><h3>📊 Customer Profile</h3></div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="card"><h3>Customer Profile</h3></div>', unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="card p-4">', unsafe_allow_html=True)
     
-    # Grouped inputs with sliders
+    st.markdown('<h4 class="section-header mb-3">Usage Metrics</h4>', unsafe_allow_html=True)
     usage_col1, usage_col2 = st.columns(2)
     with usage_col1:
-        call_failure = st.slider('📞 Call Failure', 0, 50, 7, key='cf')
-        complaints = st.slider('😠 Complaints', 0, 1, 0, key='comp')
+        call_failure = st.slider('Call Failure', 0, 50, 7, key='cf')
+        complaints = st.slider('Complaints', 0, 1, 0, key='comp')
     with usage_col2:
-        subscription_length = st.slider('📅 Subscription (months)', 0, 60, 38, key='sub')
-        seconds_use = st.slider('⏱️ Seconds of Use', 0, 2000, 500, key='sec')
+        subscription_length = st.slider('Subscription Length (months)', 0, 60, 38, key='sub')
+        seconds_use = st.slider('Seconds of Use', 0, 2000, 500, key='sec')
     
     st.markdown('---')
     
     freq_col1, freq_col2 = st.columns(2)
     with freq_col1:
-        freq_use = st.slider('📱 Frequency of Use', 0, 500, 100, key='fu')
-        freq_sms = st.slider('💬 SMS Frequency', 0, 300, 50, key='sms')
+        freq_use = st.slider('Frequency of Use', 0, 500, 100, key='fu')
+        freq_sms = st.slider('SMS Frequency', 0, 300, 50, key='sms')
     with freq_col2:
-        distinct_calls = st.slider('🔢 Distinct Numbers', 0, 20, 5, key='dc')
-        customer_value = st.slider('💰 Customer Value', 0.0, 1000.0, 470.0, key='cv')
+        distinct_calls = st.slider('Distinct Called Numbers', 0, 20, 5, key='dc')
+        customer_value = st.slider('Customer Value', 0.0, 1000.0, 470.0, key='cv')
     
     st.markdown('---')
     
     dem_col1, dem_col2 = st.columns(2)
     with dem_col1:
-        age_group = st.selectbox('👥 Age Group', [1,2,3,4,5], 0, key='ag')
-        tariff_plan = st.selectbox('💳 Tariff Plan', [1,2], 0, key='tp')
-        status = st.selectbox('✅ Status', [1,2], 0, key='stat')
+        age_group = st.selectbox('Age Group', [1,2,3,4,5], 0, key='ag')
+        tariff_plan = st.selectbox('Tariff Plan', [1,2], 0, key='tp')
+        status = st.selectbox('Status', [1,2], 0, key='stat')
     with dem_col2:
-        age = st.slider('🎂 Age', 15, 55, 30, key='age')
-        charge_amount = st.slider('💳 Charge Amount', 0.0, 500.0, 100.0, key='ca')
+        age = st.slider('Age', 15, 55, 30, key='age')
+        charge_amount = st.slider('Charge Amount', 0.0, 500.0, 100.0, key='ca')
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)\n    \n    # PDF Upload Feature\n    uploaded_file = st.file_uploader("Choisir un fichier PDF rapport client", type=['pdf'])
+
+# Helper function to parse PDF text
+
+def parse_pdf_features(text):
+    \"\"\"Parse PDF to extract 13 client features.\"\"\"
+    patterns = {
+        'Call Failure': r'Call Failure[: ]*([0-9.]+)',
+        'Complaints': r'Complaints[: ]*([0-9.]+)',
+        'Subscription Length': r'Subscription Length[: ]*([0-9.]+)',
+        'Charge Amount': r'Charge Amount[: ]*([0-9.]+)',
+        'Seconds of Use': r'Seconds of Use[: ]*([0-9.]+)',
+        'Frequency of use': r'Frequency of use[: ]*([0-9.]+)',
+        'Frequency of SMS': r'Frequency of SMS[: ]*([0-9.]+)',
+        'Distinct Called Numbers': r'Distinct Called Numbers[: ]*([0-9.]+)',
+        'Age Group': r'Age Group[: ]*([1-5])',
+        'Tariff Plan': r'Tariff Plan[: ]*([1-2])',
+        'Status': r'Status[: ]*([1-2])',
+        'Age': r'Age[: ]*([0-9.]+)',
+        'Customer Value': r'Customer Value[: ]*([0-9.]+)',
+    }
+    feature_data = {}
+    import re
+    for feature, pattern in patterns.items():
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            feature_data[feature] = float(match.group(1))
+        else:
+            raise ValueError(f"Feature '{feature}' introuvable dans le PDF")
+    return feature_data
+
+
 
 # Update input data live
 def update_input():
@@ -164,14 +196,14 @@ def update_input():
     st.session_state.input_data = input_data
 
 # Main content
-st.markdown('<div class="glass-card"><h1>🚀 Churn Prediction Dashboard Pro</h1><p>Professional ML-powered customer retention analysis</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="card"><h1>Churn Risk Assessment Dashboard</h1><p>ML-powered customer churn prediction and risk analysis</p></div>', unsafe_allow_html=True)
 
 # Live prediction button
 col_btn1, col_btn2 = st.columns([3,1])
 with col_btn1:
     st.markdown('<h2 style="color: white;">Live Prediction</h2>', unsafe_allow_html=True)
 with col_btn2:
-    if st.button('🔮 Predict Now', key='predict', help='Click or change sliders for live update', use_container_width=True):
+    if st.button('Predict Churn Risk', key='predict', help='Change sliders for live updates', use_container_width=True):
         update_input()
 
 # No call to update_input() here - vars now available via session_state keys
@@ -181,7 +213,17 @@ input_df = pd.DataFrame(st.session_state.input_data, columns=['Call Failure', 'C
                                                               'Seconds of Use', 'Frequency of use', 'Frequency of SMS',
                                                               'Distinct Called Numbers', 'Age Group', 'Tariff Plan', 'Status', 'Age', 'Customer Value'])
 
-X_prep = preprocessor.transform(input_df)
+# Fix dtypes for categorical columns to match training
+input_df['Age Group'] = input_df['Age Group'].astype(int)
+input_df['Tariff Plan'] = input_df['Tariff Plan'].astype(int)
+input_df['Status'] = input_df['Status'].astype(int)
+
+try:
+    X_prep = preprocessor.transform(input_df)
+except ValueError as e:
+    st.error(f"Prediction error: {e}. Try changing categorical sliders.")
+    st.stop()
+
 prob = model.predict_proba(X_prep)[0, 1]
 pred = model.predict(X_prep)[0]
 
@@ -190,25 +232,26 @@ col1, col2, col3 = st.columns(3)
 with col1:
     risk_class = 'risk-low' if prob < 0.3 else 'risk-medium' if prob < 0.7 else 'risk-high'
     st.markdown(f'''
-    <div class="metric-container glass-card {risk_class} animated-metric">
-        <h3>Churn Probability</h3>
-        <h1>{prob:.1%}</h1>
+    <div class="metric-card {risk_class}">
+        <h3 style="color: #1e3a8a; font-size: 1.1rem;">Churn Probability</h3>
+        <h1 style="color: #1e40af; font-size: 2.5rem;">{prob:.1%}</h1>
     </div>
     ''', unsafe_allow_html=True)
 with col2:
-    label = '✅ No Churn' if pred == 0 else '❌ Churn'
+    label = 'No Churn' if pred == 0 else 'Churn'
+    label_color = '#10b981' if pred == 0 else '#ef4444'
     st.markdown(f'''
-    <div class="metric-container glass-card">
-        <h3>Prediction</h3>
-        <h2>{label}</h2>
+    <div class="metric-card">
+        <h3 style="color: #1e3a8a; font-size: 1.1rem;">Prediction</h3>
+        <h2 style="color: {label_color}; font-size: 2rem;">{label}</h2>
     </div>
     ''', unsafe_allow_html=True)
 with col3:
-    risk_level = '🟢 Low Risk' if prob < 0.3 else '🟡 Medium Risk' if prob < 0.7 else '🔴 High Risk'
+    risk_level = 'Low Risk' if prob < 0.3 else 'Medium Risk' if prob < 0.7 else 'High Risk'
     st.markdown(f'''
-    <div class="metric-container glass-card {risk_class}">
-        <h3>Risk Level</h3>
-        <h2>{risk_level}</h2>
+    <div class="metric-card {risk_class}">
+        <h3 style="color: #1e3a8a; font-size: 1.1rem;">Risk Level</h3>
+        <h2 style="color: #1e40af; font-size: 2rem;">{risk_level}</h2>
     </div>
     ''', unsafe_allow_html=True)
 
@@ -234,12 +277,17 @@ fig_gauge = go.Figure(go.Indicator(
 fig_gauge.update_layout(height=300, font=dict(color="white"))
 st.plotly_chart(fig_gauge, width='stretch')
 
-# Feature Importance - fixed for model features
-n_features = len(model.feature_importances_)
-feature_names_model = [f'Feature_{i}' for i in range(n_features)]
+# Feature importance - dynamic length
+importances = model.feature_importances_
+feature_names = [
+    'Call Failure', 'Complaints', 'Subscription Length', 'Charge Amount',
+    'Seconds of Use', 'Frequency of use', 'Frequency of SMS',
+    'Distinct Called Numbers', 'Age Group', 'Tariff Plan', 'Status', 'Age', 'Customer Value'
+]
+min_len = min(len(importances), len(feature_names))
 fi_df = pd.DataFrame({
-    'feature': feature_names_model,
-    'importance': model.feature_importances_
+    'feature': feature_names[:min_len],
+    'importance': importances[:min_len]
 }).sort_values('importance', ascending=True)
 
 fig_bar = px.bar(
@@ -247,21 +295,27 @@ fig_bar = px.bar(
     x='importance', 
     y='feature', 
     orientation='h',
-    title="Model Feature Importance (Top Contributors)",
+    title="Model Feature Importance",
     color='importance',
-    color_continuous_scale='Viridis'
+    color_continuous_scale=['#1e3a8a', '#3b82f6', '#60a5fa']
 )
-fig_bar.update_layout(height=400, font=dict(color="white"))
+fig_bar.update_layout(height=400, font=dict(color="white"), title_font_color="white")
 st.plotly_chart(fig_bar, width='stretch')
 
 # Expander for details
-with st.expander("ℹ️ Model Insights & Explanation", expanded=False):
+with st.expander("Détails du Modèle", expanded=False):
     st.markdown("""
-    **Model:** Random Forest Classifier (AUC: 98%)
-    **Features:** 13 customer behavior metrics
-    **Live Updates:** Sliders trigger real-time predictions
-    **Design:** Glassmorphism + gradients for modern professional look
+    **Comment ça marche ?**
+    - Le modèle analyse 13 informations sur le client (appels, plaintes, durée abonnement, âge, valeur...)
+    - Il prédit la probabilité de départ (churn) en % avec précision de 98%
+    - Vert = faible risque, Jaune = moyen, Rouge = haut risque
+    - Changez les curseurs pour voir les prédictions en temps réel
+    
+    **Actions recommandées :**
+    - Risque faible : Maintenir relation normale
+    - Risque moyen : Contact personnalisé
+    - Risque haut : Offre spéciale immédiate
     """)
 
-st.markdown('<div class="glass-card"><p style="text-align:center; color:white;">🎉 Dashboard upgraded! Ready for production use.</p></div>', unsafe_allow_html=True)
+
 

@@ -23,13 +23,18 @@ ChurnAi/
 └── project_hierarchy.md
 ```
 
-## Setup & Run
-1. Clone repo: `git clone https://github.com/Yssinehan/ChurnAi.git`
-2. Create venv: `python -m venv venv`
-3. Activate: `venv\\Scripts\\activate` (Windows)
-4. Install deps: `pip install -r docs/requirements.txt`
-5. Place data CSV in `data/raw/`
-6. Run app: `streamlit run src/app.py`
+## Setup & Run (Fixed Plotly Error)
+**Quick Start (run_setup.bat created):**
+1. New terminal: `.\\run_setup.bat` (activates venv + installs plotly/streamlit)
+2. Verify: `python -c "import plotly; print('OK')"`
+3. Run app: `.\\run_app.bat` OR `streamlit run src/app_fixed.py`
+
+**Full Setup:**
+1. venv exists - activate: `venv\Scripts\activate.bat`
+2. `pip install -r docs/requirements.txt`
+3. `streamlit run src/app_fixed.py` (localhost:8501)
+
+Models ready in `model/`. Test PDF upload + live prediction!
 
 ## Features
 - Interactive EDA with histograms, feature importance.
