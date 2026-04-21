@@ -41,3 +41,14 @@ MIN_F1_CHURN = 0.80
 
 # Feature names for upload parsing
 FEATURE_NAMES = NUMERICAL_FEATURES + CATEGORICAL_FEATURES
+
+# API Configuration
+from dotenv import load_dotenv
+load_dotenv()
+
+API_KEY = os.getenv('API_KEY')
+if not API_KEY:
+    raise ValueError("API_KEY not set in .env file")
+
+API_HOST = "0.0.0.0"
+API_PORT = 8000
