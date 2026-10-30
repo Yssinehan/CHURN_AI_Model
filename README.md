@@ -1,5 +1,7 @@
 # ChurnAi - Customer Churn Prediction App & API
 
+**Security notice:** Set `API_KEY` through an environment variable or a local, untracked `.env` file. Previously committed API keys must be rotated; removing them from the current branch does not erase Git history.
+
 ## Overview
 Streamlit web app + FastAPI pour prédictions de churn client avec Random Forest (précision ~98%). Prédit risque churn basé sur 13 features client.
 
@@ -37,7 +39,7 @@ ChurnAi/
 ```
 curl -X POST "http://localhost:8000/predict" ^
 -H "Content-Type: application/json" ^
--H "X-API-Key: churnai_sk_0f8a2b4c6d7e9f1a3b5c8d0e2f4a6b8c1d3e5f7a9b0c2d4e6f8a0b2c4d6e8f0a" ^
+-H "X-API-Key: YOUR_API_KEY" ^
 -d "{\"Call_Failure\":7.0,\"Complaints\":0,\"Subscription_Length\":38.0,\"Charge_Amount\":100.0,\"Seconds_of_Use\":500.0,\"Frequency_of_use\":100.0,\"Frequency_of_SMS\":50.0,\"Distinct_Called_Numbers\":5.0,\"Age_Group\":3,\"Tariff_Plan\":1,\"Status\":2,\"Age\":30.0,\"Customer_Value\":470.0}"
 ```
 
@@ -45,9 +47,10 @@ curl -X POST "http://localhost:8000/predict" ^
 ```python
 import requests
 import json
+import os
 
 API_URL = "http://localhost:8000/predict"  # Remplacez par URL hébergée
-API_KEY = "churnai_sk_0f8a2b4c6d7e9f1a3b5c8d0e2f4a6b8c1d3e5f7a9b0c2d4e6f8a0b2c4d6e8f0a"
+API_KEY = os.environ["API_KEY"]
 
 def predict_churn(features):
     headers = {
