@@ -74,3 +74,8 @@ plots/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local configuration
+.env
+.env.*
+!.env.example
